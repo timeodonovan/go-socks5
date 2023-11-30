@@ -9,8 +9,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/things-go/go-socks5/bufferpool"
-	"github.com/things-go/go-socks5/statute"
+	"github.com/timeodonovan/go-socks5/bufferpool"
+	"github.com/timeodonovan/go-socks5/statute"
 )
 
 // GPool is used to implement custom goroutine pool default use goroutine
@@ -169,7 +169,7 @@ func (sf *Server) authenticate(conn io.Writer, bufConn io.Reader,
 	for _, auth := range sf.authMethods {
 		for _, method := range methods {
 			if auth.GetCode() == method {
-				return auth.Authenticate(bufConn, conn, userAddr)
+				return auth.Authenticate(sf, bufConn, conn, userAddr)
 			}
 		}
 	}

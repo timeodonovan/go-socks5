@@ -1,9 +1,8 @@
 package socks5
 
 import (
+	"github.com/timeodonovan/go-socks5/statute"
 	"io"
-
-	"github.com/things-go/go-socks5/statute"
 )
 
 // AuthContext A Request encapsulates authentication state provided
@@ -19,7 +18,7 @@ type AuthContext struct {
 
 // Authenticator provide auth
 type Authenticator interface {
-	Authenticate(reader io.Reader, writer io.Writer, userAddr string) (*AuthContext, error)
+	Authenticate(sf *Server, reader io.Reader, writer io.Writer, userAddr string) (*AuthContext, error)
 	GetCode() uint8
 }
 
@@ -30,7 +29,7 @@ type NoAuthAuthenticator struct{}
 func (a NoAuthAuthenticator) GetCode() uint8 { return statute.MethodNoAuth }
 
 // Authenticate implement interface Authenticator
-func (a NoAuthAuthenticator) Authenticate(_ io.Reader, writer io.Writer, _ string) (*AuthContext, error) {
+func (a NoAuthAuthenticator) Authenticate(sf *Server, _ io.Reader, writer io.Writer, _ string) (*AuthContext, error) {
 	_, err := writer.Write([]byte{statute.VersionSocks5, statute.MethodNoAuth})
 	return &AuthContext{statute.MethodNoAuth, make(map[string]string)}, err
 }
@@ -45,7 +44,7 @@ type UserPassAuthenticator struct {
 func (a UserPassAuthenticator) GetCode() uint8 { return statute.MethodUserPassAuth }
 
 // Authenticate implement interface Authenticator
-func (a UserPassAuthenticator) Authenticate(reader io.Reader, writer io.Writer, userAddr string) (*AuthContext, error) {
+func (a UserPassAuthenticator) Authenticate(sf *Server, reader io.Reader, writer io.Writer, userAddr string) (*AuthContext, error) {
 	// reply the client to use user/pass auth
 	if _, err := writer.Write([]byte{statute.VersionSocks5, statute.MethodUserPassAuth}); err != nil {
 		return nil, err
@@ -57,7 +56,7 @@ func (a UserPassAuthenticator) Authenticate(reader io.Reader, writer io.Writer, 
 	}
 
 	// Verify the password
-	if !a.Credentials.Valid(string(nup.User), string(nup.Pass), userAddr) {
+	if !a.Credentials.Valid(sf, string(nup.User), string(nup.Pass), userAddr) {
 		if _, err := writer.Write([]byte{statute.UserPassAuthVersion, statute.AuthFailure}); err != nil {
 			return nil, err
 		}
@@ -73,6 +72,7 @@ func (a UserPassAuthenticator) Authenticate(reader io.Reader, writer io.Writer, 
 		map[string]string{
 			"username": string(nup.User),
 			"password": string(nup.Pass),
+			"host":     userAddr,
 		},
 	}, nil
 }

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/things-go/go-socks5/statute"
+	"github.com/timeodonovan/go-socks5/statute"
 )
 
 // AddressRewriter is used to rewrite a destination transparently
@@ -114,6 +114,10 @@ func (sf *Server) handleConnect(ctx context.Context, writer io.Writer, request *
 			return net.Dial(net_, addr)
 		}
 	}
+	sf.logger.Errorf("connecting to %s for %s from %s",
+		request.DestAddr.String(),
+		request.AuthContext.Payload["username"],
+		request.AuthContext.Payload["host"])
 	target, err := dial(ctx, "tcp", request.DestAddr.String())
 	if err != nil {
 		msg := err.Error()

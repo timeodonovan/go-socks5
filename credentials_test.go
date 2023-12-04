@@ -1,6 +1,7 @@
 package socks5
 
 import (
+	"net/netip"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,14 +21,15 @@ func TestStaticCredentials(t *testing.T) {
 
 func TestPasswordAndHostsCredentials(t *testing.T) {
 	srv := NewServer()
+	prefix, _ := netip.ParsePrefix("127.0.0.1/32")
 	creds := PasswordAndHostsCredentials{
 		"foo": UserAuth{
-			PwHash: "$2a$10$cWsrCEayMfSoZnLDrPXck.yNSHzcpp7vutsfpDJaf./tPQl2IVYMy",
-			Hosts:  []string{"127.0.0.1"},
+			PwHash:   "$2a$10$cWsrCEayMfSoZnLDrPXck.yNSHzcpp7vutsfpDJaf./tPQl2IVYMy",
+			Prefixes: []netip.Prefix{prefix},
 		},
 		"baz": UserAuth{
-			PwHash: "$2a$10$cWsrCEayMfSoZnLDrPXck.yNSHzcpp7vutsfpDJaf./tPQl2IVYMy",
-			Hosts:  []string{"127.0.0.1"},
+			PwHash:   "$2a$10$cWsrCEayMfSoZnLDrPXck.yNSHzcpp7vutsfpDJaf./tPQl2IVYMy",
+			Prefixes: []netip.Prefix{prefix},
 		},
 	}
 

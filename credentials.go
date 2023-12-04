@@ -2,7 +2,7 @@ package socks5
 
 import (
 	"golang.org/x/crypto/bcrypt"
-	"slices"
+	"net/netip"
 	"strings"
 )
 
@@ -23,8 +23,8 @@ func (s StaticCredentials) Valid(sf *Server, user, password, _ string) bool {
 
 // UserAuth holds a mapped user's bcrypt password hash and allowed hosts list
 type UserAuth struct {
-	PwHash string
-	Hosts  []string
+	PwHash   string
+	Prefixes []netip.Prefix
 }
 
 // PasswordAndHostsCredentials credential store for users with password hash and allowed hosts list
@@ -47,11 +47,33 @@ func (s PasswordAndHostsCredentials) Valid(sf *Server, user, password, hostPort 
 	}
 
 	// Finally check if the host is allowed
-	host := strings.SplitN(hostPort, ":", 2)[0]
-	if !slices.Contains(userPassHost.Hosts, host) {
-		sf.logger.Errorf("credentials: host %s is not defined in %s's allowed host list", host, user)
+	ip := strings.SplitN(hostPort, ":", 2)[0]
+
+	if !ipInPrefixList(userPassHost.Prefixes, ip) {
+		sf.logger.Errorf("credentials: host %s is not defined in %s's allowed host list", ip, user)
 		return false
 	}
 
 	return true
+}
+
+// ipInPrefixList
+func ipInPrefixList(prefixes []netip.Prefix, ip string) bool {
+	var exists = false
+
+	// Attempt to parse the IP string into an addr
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return false
+	}
+
+	// Check if the addr exists in any of the allowed prefixes
+	for _, prefix := range prefixes {
+		if prefix.Contains(addr) {
+			exists = true
+			break
+		}
+	}
+
+	return exists
 }
